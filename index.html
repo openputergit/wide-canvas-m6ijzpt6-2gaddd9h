@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAS Requirements and Test Generation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#a100ff',
+                            dark: '#7500c0',
+                            darker: '#460073',
+                        },
+                        accent: {
+                            pink: '#b455aa',
+                            purple: '#a055f5',
+                            light: '#be82ff',
+                            lighter: '#dcafff',
+                            lightest: '#e6dcff',
+                        },
+                        secondary: {
+                            blue: '#0041f0',
+                            green: '#05f0a5',
+                            red: '#ff3246',
+                            orange: '#ff7800',
+                            pink: '#ff50a0',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        /* Using Inter as a fallback for Graphik */
+        body {
+            font-family: 'Graphik', 'Inter', sans-serif;
+        }
+        
+        .gt-sectra {
+            font-family: 'GT Sectra Fine', serif;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            position: relative;
+            width: 100%;
+            height: 4px;
+            background-color: #e6dcff;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 100%;
+            background-color: #a100ff;
+            animation: loading 1s infinite ease-in-out;
+        }
+
+        @keyframes loading {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-primary px-4 py-3 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-white text-xl font-bold">ADAS Requirements and Test Generation</h1>
+            <div class="flex space-x-4">
+                <a href="#" class="text-white hover:text-accent-lightest" onclick="showPage('upload')">Upload</a>
+                <a href="#" class="text-white hover:text-accent-lightest" onclick="showPage('results')">Results</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Upload Page -->
+    <div id="upload-page" class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-xl p-6">
+            <h2 class="text-2xl font-bold text-primary mb-6">Document Upload</h2>
+            <div class="border-2 border-dashed border-accent-lighter rounded-lg p-8 text-center">
+                <i class="bi bi-cloud-upload text-4xl text-primary mb-4"></i>
+                <p class="mb-4">Drag and drop your documents here or</p>
+                <input type="file" id="file-upload" class="hidden" multiple>
+                <label for="file-upload" class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-lg cursor-pointer transition-colors">
+                    Browse Files
+                </label>
+            </div>
+            <div id="file-list" class="mt-6 space-y-2"></div>
+            <button id="start-analysis" onclick="startAnalysis()" class="w-full mt-6 bg-secondary-blue hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                Start Analysis
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Page -->
+    <div id="results-page" class="container mx-auto px-4 py-8 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6">
+            <h2 class="text-2xl font-bold text-primary mb-6">Analysis Results</h2>
+            
+            <!-- Tabs -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button onclick="switchTab('industry')" class="tab-btn bg-accent-lightest hover:bg-accent-light text-primary px-4 py-2 rounded-lg">Industry Analysis</button>
+                <button onclick="switchTab('requirements')" class="tab-btn bg-accent-lightest hover:bg-accent-light text-primary px-4 py-2 rounded-lg">Requirements Extraction</button>
+                <button onclick="switchTab('safety')" class="tab-btn bg-accent-lightest hover:bg-accent-light text-primary px-4 py-2 rounded-lg">Safety Analysis</button>
+                <button onclick="switchTab('testcases')" class="tab-btn bg-accent-lightest hover:bg-accent-light text-primary px-4 py-2 rounded-lg">Test Cases</button>
+                <button onclick="switchTab('testscripts')" class="tab-btn bg-accent-lightest hover:bg-accent-light text-primary px-4 py-2 rounded-lg">Test Scripts</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="industry" class="tab-content active">
+                <div class="prose max-w-none">
+                    <h3 class="text-xl font-bold text-primary-dark mb-4">Industry Analysis</h3>
+                    <div id="industry-content" class="bg-gray-50 p-4 rounded-lg">
+                        Loading analysis...
+                    </div>
+                </div>
+            </div>
+
+            <div id="requirements" class="tab-content">
+                <div class="prose max-w-none">
+                    <h3 class="text-xl font-bold text-primary-dark mb-4">Requirements Extraction</h3>
+                    <div id="requirements-content" class="bg-gray-50 p-4 rounded-lg">
+                        Loading requirements...
+                    </div>
+                </div>
+            </div>
+
+            <div id="safety" class="tab-content">
+                <div class="prose max-w-none">
+                    <h3 class="text-xl font-bold text-primary-dark mb-4">Safety Analysis</h3>
+                    <div id="safety-content" class="bg-gray-50 p-4 rounded-lg">
+                        Loading safety analysis...
+                    </div>
+                </div>
+            </div>
+
+            <div id="testcases" class="tab-content">
+                <div class="prose max-w-none">
+                    <h3 class="text-xl font-bold text-primary-dark mb-4">Test Cases</h3>
+                    <div id="testcases-content" class="bg-gray-50 p-4 rounded-lg">
+                        Loading test cases...
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-lg font-bold text-primary-dark mb-4">Simulation Scenario</h4>
+                        <div id="simulation-image" class="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
+                            <p class="text-gray-500">Simulation visualization will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="testscripts" class="tab-content">
+                <div class="prose max-w-none">
+                    <h3 class="text-xl font-bold text-primary-dark mb-4">Test Scripts</h3>
+                    <div id="testscripts-content" class="bg-gray-50 p-4 rounded-lg">
+                        Loading test scripts...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Page Navigation
+        function showPage(page) {
+            document.getElementById('upload-page').classList.toggle('hidden', page !== 'upload');
+            document.getElementById('results-page').classList.toggle('hidden', page !== 'results');
+        }
+
+        // File Upload Handling
+        const fileUpload = document.getElementById('file-upload');
+        const fileList = document.getElementById('file-list');
+        const uploadedFiles = new Set();
+
+        fileUpload.addEventListener('change', function(e) {
+            for (let file of e.target.files) {
+                if (!uploadedFiles.has(file.name)) {
+                    uploadedFiles.add(file.name);
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between bg-accent-lightest p-2 rounded';
+                    fileItem.innerHTML = `
+                        <span>${file.name}</span>
+                        <button onclick="removeFile('${file.name}')" class="text-secondary-red">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    `;
+                    fileList.appendChild(fileItem);
+                }
+            }
+        });
+
+        function removeFile(fileName) {
+            uploadedFiles.delete(fileName);
+            const files = Array.from(fileList.children);
+            const fileToRemove = files.find(f => f.firstElementChild.textContent === fileName);
+            if (fileToRemove) fileList.removeChild(fileToRemove);
+        }
+
+        // Analysis Process
+        function startAnalysis() {
+            if (uploadedFiles.size === 0) {
+                alert('Please upload at least one document to analyze.');
+                return;
+            }
+            
+            showPage('results');
+            // Simulate loading states for each tab
+            const contents = ['industry', 'requirements', 'safety', 'testcases', 'testscripts'];
+            contents.forEach(content => {
+                const element = document.getElementById(`${content}-content`);
+                element.innerHTML = '<div class="loading"></div>';
+                
+                // Simulate content loading
+                setTimeout(() => {
+                    element.innerHTML = `Sample ${content.charAt(0).toUpperCase() + content.slice(1)} Analysis Content`;
+                }, 2000 + Math.random() * 2000);
+            });
+
+            // Simulate loading simulation image
+            setTimeout(() => {
+                const simulationDiv = document.getElementById('simulation-image');
+                simulationDiv.innerHTML = `
+                    <div class="w-full h-full bg-accent-lighter rounded-lg flex items-center justify-center">
+                        <p class="text-primary-dark">Simulation Scenario Visualization</p>
+                    </div>
+                `;
+            }, 4000);
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
